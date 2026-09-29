@@ -1,0 +1,1850 @@
+muZOOma v2.0 - Master Project File (single-text envelope, FLAT, v2 format)
+Generated: 2026-09-25T16:44:10+00:00
+Author: Z.ai (GLM) for Jason Tyler Guest / Mort Parlail
+Files: 13 (all flat - no subfolders)
+
+FLAT STRUCTURE: all files extracted to the SAME folder.
+Format: each file starts with '=== FILE: <name> ===' marker.
+
+TO RECONSTRUCT:
+  1. Save this file as muZOOma_v2.0_master.txt
+  2. Manually extract extract.py (last file in this envelope)
+  3. Run: python extract.py muZOOma_v2.0_master.txt
+  4. All files dump to the same folder. No subfolders.
+
+V2.0 CHANGES (vs v1.1):
+  - Default path: C:\Users\jatygu_zoo (PowerShell default)
+  - Random zoo name generator (100+ silly names)
+  - Default LLM: qwen2.5:7b primary (NOT qwen3:8b - too slow)
+  - Default loop: 10 min (was 5)
+  - Reddit delay: 10s between requests (was 5s)
+  - LLM timeout: 360s (was 240s)
+  - Orchestrator timeout: 1200s (was 600s)
+  - 'Powered by Jatygu.com' branding on every draft
+  - Vision-pivot mission (real-world problem discovery)
+  - All v1.1 fixes inherited (RSS, flat, factual accuracy)
+
+FILES: muzooma_zai_v2.0001.py, README.md, config.yaml.template, constitution.txt, zookeeper_journal.md, llm_router.py, orchestrator.py, historian.py, coordinator.py, researcher.py, builder.py, auditor.py, extract.py
+
+=== FILE: muzooma_zai_v2.0001.py ===
+"""
+================================================================================
+muzooma_zai_v2.0001.py — muZOOma v2.0 Interview-Mode Zoo Spawner
+================================================================================
+
+Author:    Z.ai (GLM) — Dream Team pioneer fork
+Date:      2026-09-25
+Version:   2.0 (muZOOma spec — dedicated profile + VPN + all v1.1 fixes)
+Digits:    0001 (pioneer)
+
+WHAT'S NEW IN v2.0 (vs v1.1):
+  - Default path: C:\\Users\\jatygu_zoo (PowerShell default — no cd needed)
+  - Random zoo name generator (100+ silly names, press Enter to accept)
+  - Default mission: vision pivot (real-world problem discovery + brokerage)
+  - Default LLM: qwen2.5:7b primary (NOT qwen3:8b — too slow on this CPU)
+  - Default loop: 10 min (was 5)
+  - All v1.1 fixes baked in (RSS, flat structure, branding, factual accuracy)
+  - "Powered by Jatygu.com" branding on every draft
+  - LLM timeout: 360s (was 240s)
+  - Orchestrator timeout: 1200s (was 600s)
+  - Reddit delay: 10s between requests (was 5s — reduces 429s)
+
+USAGE:
+    python muzooma_zai_v2.0001.py
+
+================================================================================
+"""
+
+import os
+import sys
+import json
+import shutil
+import subprocess
+import time
+import random
+from pathlib import Path
+from datetime import datetime, timezone
+
+# Try to use colorama for nice terminal colors
+try:
+    from colorama import init as colorama_init, Fore, Style
+    colorama_init()
+    AMBER = Fore.YELLOW
+    GREEN = Fore.GREEN
+    RED = Fore.RED
+    CYAN = Fore.CYAN
+    BOLD = Style.BRIGHT
+    DIM = Style.DIM
+    RESET = Style.RESET_ALL
+except ImportError:
+    AMBER = GREEN = RED = CYAN = BOLD = DIM = RESET = ""
+
+
+# ─── RANDOM ZOO NAME GENERATOR ───
+ZOO_NAMES = [
+    "marshmallow_zoo", "cosmic_zoo", "grumpy_zoo", "sparkly_zoo", "funky_zoo",
+    "wobbly_zoo", "sneaky_zoo", "giggly_zoo", "puzzled_zoo", "bouncy_zoo",
+    "zoo_alien", "zoo_ninja", "zoo_pirate", "zoo_wizard", "zoo_phantom",
+    "zoo_dragon", "zoo_panda", "zoo_otter", "zoo_falcon", "zoo_mango",
+    "purple_zoo", "electric_zoo", "turbo_zoo", "lazy_zoo", "hungry_zoo",
+    "zoo_compass", "zoo_lantern", "zoo_sundial", "zoo_kite", "zoo_anchor",
+    "midnight_zoo", "sunrise_zoo", "rainbow_zoo", "thunder_zoo", "whisper_zoo",
+    "zoo_bonsai", "zoo_kelp", "zoo_aurora", "zoo_bramble", "zoo_cobblestone",
+    "cheeky_zoo", "drowsy_zoo", "fizzy_zoo", "gnarly_zoo", "humble_zoo",
+    "zoo_sparrow", "zoo_badger", "zoo_heron", "zoo_marmot", "zoo_vole",
+    "velvet_zoo", "crystal_zoo", "amber_zoo", "copper_zoo", "jade_zoo",
+    "zoo_gadget", "zoo_widget", "zoo_sprocket", "zoo_piston", "zoo_lever",
+    "noodle_zoo", "pickle_zoo", "biscuit_zoo", "pretzel_zoo", "waffle_zoo",
+    "zoo_harbor", "zoo_meadow", "zoo_canyon", "zoo_glacier", "zoo_delta",
+    "sturdy_zoo", "plucky_zoo", "quaint_zoo", "rustic_zoo", "snug_zoo",
+    "zoo_owl", "zoo_fox", "zoo_moth", "zoo_carp", "zoo_newt",
+    "gentle_zoo", "loyal_zoo", "eager_zoo", "calm_zoo", "bold_zoo",
+    "zoo_lighthouse", "zoo_windmill", "zoo_observatory", "zoo_greenhouse", "zoo_cottage",
+    "rambunctious_zoo", "shimmering_zoo", "frolicking_zoo", "meandering_zoo", "pondering_zoo",
+    "zoo_jellyfish", "zoo_narwhal", "zoo_platypus", "zoo_chameleon", "zoo_narcoleptic",
+]
+
+
+# ─── PATHS ───
+HERE = Path(__file__).resolve().parent
+ZOO_ROOT = Path(os.environ.get("JOO_ROOT", r"C:\Users\jatygu_zoo"))
+ZOOS_DIR = ZOO_ROOT / "zoos"
+SHARED_DIR = ZOOS_DIR / "_shared"
+SHARED_EVENTS = SHARED_DIR / "events.jsonl"
+TEMPLATE_DIR = HERE
+VENV_PATH = ZOO_ROOT / "venv"
+VENV_PYTHON = VENV_PATH / "Scripts" / "python.exe"
+
+
+# ─── BANNER & FORMATTING ───
+def print_banner():
+    print()
+    print(f"{AMBER}{BOLD}{'='*60}{RESET}")
+    print(f"{AMBER}{BOLD}  muZOOma v2.0 - Zoo Spawner  (zai fork, digits 0001){RESET}")
+    print(f"{AMBER}{BOLD}{'='*60}{RESET}")
+    print()
+    print(f"{CYAN}This script will interview you about a new Zoo, then spawn it.{RESET}")
+    print(f"{CYAN}Answer the questions. Defaults are shown in [brackets].{RESET}")
+    print(f"{CYAN}Press Ctrl+C at any time to abort.{RESET}")
+    print()
+
+
+def print_step(n, msg):
+    print(f"\n{AMBER}{BOLD}>>> Q{n}: {msg}{RESET}")
+
+
+def print_ok(msg):
+    print(f"  {GREEN}OK  {msg}{RESET}")
+
+
+def print_warn(msg):
+    print(f"  {AMBER}!   {msg}{RESET}")
+
+
+def print_err(msg):
+    print(f"  {RED}X   {msg}{RESET}")
+
+
+# ─── INPUT HELPERS ───
+def ask(prompt, default=None):
+    if default is not None:
+        suffix = f" [{DIM}{default}{RESET}]"
+    else:
+        suffix = ""
+    val = input(f"  {CYAN}{prompt}{RESET}{suffix}: ").strip()
+    if not val and default is not None:
+        return default
+    return val
+
+
+def ask_choice(prompt, options, default=None):
+    print_step("", prompt)
+    print(f"  {DIM}Options: {', '.join(options)}{RESET}")
+    while True:
+        val = ask("Choice", default=default)
+        if val in options:
+            return val
+        print(f"  {RED}Invalid choice. Pick from: {', '.join(options)}{RESET}")
+
+
+# ─── INTERVIEW ───
+def run_interview():
+    """Run the 11-question interview. Returns dict of answers."""
+    print_banner()
+
+    # Q1: Random zoo name
+    random_name = random.choice(ZOO_NAMES)
+    print_step(1, f"What's the name of this Zoo? (or press Enter for '{random_name}')")
+    print(f"  {DIM}A silly default has been picked for you. Just press Enter to accept.{RESET}")
+    while True:
+        zoo_name = ask(f"Zoo name (or Enter for '{random_name}')", default=random_name)
+        if zoo_name and all(c.isalnum() or c == "_" for c in zoo_name):
+            break
+        if not zoo_name:
+            zoo_name = random_name
+            break
+        print(f"  {RED}Invalid. Use only lowercase letters, numbers, underscores.{RESET}")
+
+    # Q2: Purpose
+    print_step(2, "What's the purpose of this Zoo?")
+    purpose = ask_choice("Purpose", ["business", "service", "research", "mixed"],
+                          default="business")
+
+    # Q3: Business model
+    business_model = "n/a"
+    if purpose == "business":
+        print_step(3, "What business model?")
+        business_model = ask_choice("Business model", [
+            "brokerage", "lead_gen", "digital_products",
+            "service_brokerage", "other"
+        ], default="brokerage")
+    else:
+        print_step(3, f"(Skipped - purpose is {purpose}, not business)")
+
+    # Q4: Mission (vision pivot default)
+    print_step(4, "Mission statement (1-2 sentences)")
+    default_mission = (
+        "Scan the allowlisted sources for problems people are actively asking about. "
+        "Identify the 3 most-discussed unmet needs across any industry or topic. "
+        "For each, draft a practical solution that could be given away freely. "
+        "Focus on real-world problems people are experiencing right now."
+    )
+    mission = ask("Mission statement", default=default_mission)
+
+    # Q5: Sources (HN + Reddit subreddits)
+    print_step(5, "Allowlisted sources (comma-separated URLs)")
+    default_sources = (
+        "https://news.ycombinator.com/, "
+        "https://www.reddit.com/r/Entrepreneur/, "
+        "https://www.reddit.com/r/SideProject/, "
+        "https://www.reddit.com/r/SelfHosted/, "
+        "https://www.reddit.com/r/smallbusiness/, "
+        "https://www.reddit.com/r/productivity/"
+    )
+    sources_str = ask("Sources (comma-separated)", default=default_sources)
+    sources = [s.strip() for s in sources_str.split(",") if s.strip()]
+
+    # Q6: LLM models (qwen2.5:7b primary — proven on this CPU)
+    print_step(6, "LLM models for the fallback chain")
+    print(f"  {DIM}qwen2.5:7b is primary (proven on i5-10310U). qwen3:8b is 3rd fallback (too slow for primary).{RESET}")
+    default_models = "qwen2.5:7b, gemma3:4b, qwen3:8b, llama3.1:8b"
+    models_str = ask("LLM models", default=default_models)
+    llm_models = [m.strip() for m in models_str.split(",") if m.strip()]
+
+    # Q7: Loop interval (10 min default)
+    print_step(7, "Mission loop interval (minutes)")
+    loop_min_str = ask("Minutes", default="10")
+    try:
+        loop_min = int(loop_min_str)
+    except ValueError:
+        loop_min = 10
+        print(f"  {AMBER}! Invalid number, using default 10{RESET}")
+    loop_interval_sec = loop_min * 60
+
+    # Q8-Q10: Optional fields
+    print_step(8, "BTC revenue address (optional — blank for now)")
+    btc_revenue = ask("BTC revenue address (or blank)", default="")
+
+    print_step(9, "TITHE BTC address (optional — blank for now)")
+    btc_tithe = ask("TITHE BTC address (or blank)", default="")
+
+    print_step(10, "Zookeeper escalation email (optional — blank for now)")
+    escalation_email = ask("Escalation email (or blank)", default="")
+
+    # Q11: Auto-launch
+    print_step(11, "Auto-launch the Zoo after spawn?")
+    auto_launch = ask_choice("Auto-launch?", ["y", "n"], default="y")
+
+    return {
+        "zoo_name": zoo_name,
+        "purpose": purpose,
+        "business_model": business_model,
+        "mission": mission,
+        "sources": sources,
+        "llm_models": llm_models,
+        "loop_interval_sec": loop_interval_sec,
+        "btc_revenue": btc_revenue,
+        "btc_tithe": btc_tithe,
+        "escalation_email": escalation_email,
+        "auto_launch": auto_launch,
+    }
+
+
+# ─── SPAWN ───
+def spawn_zoo(answers):
+    """Create the new Zoo folder, copy template files, generate config.yaml."""
+    zoo_name = answers["zoo_name"]
+    zoo_folder = ZOOS_DIR / zoo_name
+
+    print()
+    print(f"{AMBER}{BOLD}{'='*60}{RESET}")
+    print(f"{AMBER}{BOLD}  SPAWNING ZOO: {zoo_name}{RESET}")
+    print(f"{AMBER}{BOLD}{'='*60}{RESET}")
+
+    if not TEMPLATE_DIR.exists():
+        print_err(f"Template folder not found: {TEMPLATE_DIR}")
+        return None
+
+    if zoo_folder.exists():
+        print_warn(f"Folder already exists: {zoo_folder}")
+        confirm = input(f"  {AMBER}Overwrite? (y/n): {RESET}").strip().lower()
+        if confirm != "y":
+            print_err("Aborted.")
+            return None
+        shutil.rmtree(zoo_folder)
+    zoo_folder.mkdir(parents=True, exist_ok=True)
+    print_ok(f"Created: {zoo_folder}")
+
+    items_to_copy = [
+        "constitution.txt",
+        "zookeeper_journal.md",
+        "llm_router.py",
+        "orchestrator.py",
+        "README.md",
+        "historian.py",
+        "coordinator.py",
+        "researcher.py",
+        "builder.py",
+        "auditor.py",
+    ]
+    for item in items_to_copy:
+        src = TEMPLATE_DIR / item
+        dst = zoo_folder / item
+        if not src.exists():
+            print_warn(f"Template missing: {src}")
+            continue
+        shutil.copy2(src, dst)
+        print_ok(f"Copied: {item}")
+
+    for subdir in ["memory", "outbox", "missions"]:
+        (zoo_folder / subdir).mkdir(parents=True, exist_ok=True)
+    print_ok("Created subdirs: memory/, outbox/, missions/")
+
+    # Generate config.yaml
+    config_path = zoo_folder / "config.yaml"
+    config_template = (TEMPLATE_DIR / "config.yaml.template").read_text(encoding="utf-8")
+    timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+    config_text = config_template
+    config_text = config_text.replace("__ZOO_NAME__", zoo_name)
+    config_text = config_text.replace("__PURPOSE__", answers["purpose"])
+    config_text = config_text.replace("__BUSINESS_MODEL__", answers["business_model"])
+    config_text = config_text.replace("__TIMESTAMP__", timestamp)
+    config_text = config_text.replace("__MISSION__", answers["mission"])
+    sources_yaml = "\n  - ".join(answers["sources"])
+    config_text = config_text.replace("- __SOURCES__", f"- {sources_yaml}" if sources_yaml else "[]")
+    models_yaml = "\n  - ".join(answers["llm_models"])
+    config_text = config_text.replace("- __LLM_MODELS__", f"- {models_yaml}" if models_yaml else "[]")
+    config_text = config_text.replace("__LOOP_INTERVAL_SEC__", str(answers["loop_interval_sec"]))
+    config_text = config_text.replace("__BTC_REVENUE__", answers["btc_revenue"] or "(not set)")
+    config_text = config_text.replace("__BTC_TITHE__", answers["btc_tithe"] or "(not set)")
+    config_text = config_text.replace("__ESCALATION_EMAIL__", answers["escalation_email"] or "(not set)")
+    config_text = config_text.replace("__AUTO_LAUNCH__", answers["auto_launch"])
+
+    config_path.write_text(config_text, encoding="utf-8")
+    print_ok(f"Generated: {config_path}")
+
+    # Personalize constitution, journal, README
+    for fname, replacements in [
+        ("constitution.txt", {"__ZOO_NAME__": zoo_name, "__PURPOSE__": answers["purpose"], "__BUSINESS_MODEL__": answers["business_model"]}),
+        ("zookeeper_journal.md", {"__ZOO_NAME__": zoo_name, "__TIMESTAMP__": timestamp, "__PURPOSE__": answers["purpose"], "__BUSINESS_MODEL__": answers["business_model"], "__MISSION_SUMMARY__": answers["mission"][:120], "__LLM_MODELS_SUMMARY__": ", ".join(answers["llm_models"]), "__BTC_REVENUE_SUMMARY__": answers["btc_revenue"] or "(not set)", "__BTC_TITHE_SUMMARY__": answers["btc_tithe"] or "(not set)"}),
+        ("README.md", {"__ZOO_NAME__": zoo_name, "__TIMESTAMP__": timestamp, "__PURPOSE__": answers["purpose"], "__BUSINESS_MODEL__": answers["business_model"]}),
+    ]:
+        fpath = zoo_folder / fname
+        if fpath.exists():
+            ftext = fpath.read_text(encoding="utf-8")
+            for old, new in replacements.items():
+                ftext = ftext.replace(old, new)
+            fpath.write_text(ftext, encoding="utf-8")
+            print_ok(f"Personalized: {fname}")
+
+    # Shared log
+    SHARED_DIR.mkdir(parents=True, exist_ok=True)
+    if not SHARED_EVENTS.exists():
+        SHARED_EVENTS.write_text("", encoding="utf-8")
+
+    spawn_event = {
+        "time": timestamp,
+        "zoo": zoo_name,
+        "animal": "spawner",
+        "event": "zoo_spawned",
+        "details": {
+            "purpose": answers["purpose"],
+            "business_model": answers["business_model"],
+            "mission_excerpt": answers["mission"][:200],
+            "llm_models": answers["llm_models"],
+            "loop_interval_sec": answers["loop_interval_sec"],
+            "btc_revenue_set": bool(answers["btc_revenue"]),
+            "btc_tithe_set": bool(answers["btc_tithe"]),
+            "escalation_email_set": bool(answers["escalation_email"]),
+            "spawner": "muzooma_zai_v2.0001",
+            "path": str(zoo_folder),
+        }
+    }
+    with open(SHARED_EVENTS, "a", encoding="utf-8") as f:
+        f.write(json.dumps(spawn_event) + "\n")
+    print_ok(f"Logged spawn event to: {SHARED_EVENTS}")
+
+    return zoo_folder
+
+
+def launch_zoo(zoo_folder):
+    """Launch the new Zoo's orchestrator in a new PowerShell window."""
+    zoo_name = zoo_folder.name
+    print()
+    print(f"{AMBER}{BOLD}>>> Launching Zoo '{zoo_name}' in new PowerShell window...{RESET}")
+
+    cmd = (
+        f'start "Zoo: {zoo_name}" '
+        f'powershell -NoExit -Command '
+        f'"cd \'{zoo_folder}\'; '
+        f'& \'{VENV_PYTHON}\' \'{zoo_folder / "orchestrator.py"}\'; '
+        f'Write-Host \'\'\'\'\'\'\'Zoo {zoo_name} shut down. Press any key.\'\'\'\'\'\'\'\''
+        f'; $null = $Host.UI.RawUI.ReadKey(\'NoEcho,IncludeKeyDown\')"'
+    )
+
+    try:
+        subprocess.run(cmd, shell=True, check=True)
+        print_ok(f"New PowerShell window launched for Zoo '{zoo_name}'")
+    except Exception as e:
+        print_warn(f"Auto-launch failed: {e}")
+        print_warn(f"You can launch manually with:")
+        print_warn(f"  cd {zoo_folder}")
+        print_warn(f"  {VENV_PYTHON} orchestrator.py")
+
+
+def print_summary(zoo_folder, answers):
+    print()
+    print(f"{GREEN}{BOLD}{'='*60}{RESET}")
+    print(f"{GREEN}{BOLD}  ZOO SPAWN COMPLETE (muZOOma v2.0){RESET}")
+    print(f"{GREEN}{BOLD}{'='*60}{RESET}")
+    print()
+    print(f"  {CYAN}Zoo name:{RESET}        {answers['zoo_name']}")
+    print(f"  {CYAN}Purpose:{RESET}         {answers['purpose']}")
+    print(f"  {CYAN}Business model:{RESET} {answers['business_model']}")
+    print(f"  {CYAN}Mission:{RESET}        {answers['mission'][:80]}...")
+    print(f"  {CYAN}Sources:{RESET}        {len(answers['sources'])} URLs")
+    print(f"  {CYAN}LLM models:{RESET}     {', '.join(answers['llm_models'])}")
+    print(f"  {CYAN}Loop interval:{RESET}  {answers['loop_interval_sec']//60} min")
+    print(f"  {CYAN}BTC revenue:{RESET}    {'(set)' if answers['btc_revenue'] else '(deferred)'}")
+    print(f"  {CYAN}BTC tithe:{RESET}      {'(set)' if answers['btc_tithe'] else '(deferred)'}")
+    print(f"  {CYAN}Escalation email:{RESET} {'(set)' if answers['escalation_email'] else '(deferred)'}")
+    print()
+    print(f"  {CYAN}Folder:{RESET}         {zoo_folder}")
+    print()
+    if answers["auto_launch"] == "y":
+        print(f"  {GREEN}A new PowerShell window opened with this Zoo's orchestrator.{RESET}")
+    else:
+        print(f"  To launch manually:")
+        print(f"    {DIM}cd {zoo_folder}{RESET}")
+        print(f"    {DIM}{VENV_PYTHON} orchestrator.py{RESET}")
+    print()
+    print(f"  {AMBER}Powered by Jatygu.com{RESET}")
+    print(f"  {AMBER}Kill switch: Ctrl+C or STOP.txt in {zoo_folder}{RESET}")
+    print()
+
+
+# ─── MAIN ───
+def main():
+    try:
+        answers = run_interview()
+        zoo_folder = spawn_zoo(answers)
+        if zoo_folder is None:
+            return
+        if answers["auto_launch"] == "y":
+            launch_zoo(zoo_folder)
+        print_summary(zoo_folder, answers)
+    except KeyboardInterrupt:
+        print()
+        print_err("Aborted by user (Ctrl+C). No Zoo was spawned.")
+        sys.exit(1)
+    except Exception as e:
+        print_err(f"Unhandled error: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
+
+=== FILE: README.md ===
+# Zoo README — __ZOO_NAME__
+
+**Spawned:** __TIMESTAMP__
+**Purpose:** __PURPOSE__
+**Business model:** __BUSINESS_MODEL__
+**Spawner:** muzooma_zai_v1.0001
+
+## What this is
+
+An autonomous agent Zoo spawned by the muZOOma v1.1 interview process.
+This Zoo runs a mission loop on a configurable interval, using a fallback
+chain of 3+ local Ollama LLMs per animal role.
+
+## How to run
+
+Open PowerShell on Lefty, activate the shared venv, and run:
+
+```powershell
+cd C:\Users\device\JatyguZoo\zoos\__ZOO_NAME__
+C:\Users\device\JatyguZoo\venv\Scripts\Activate.ps1
+python orchestrator.py
+```
+
+To run a single animal for testing:
+
+```powershell
+python animals\historian.py
+python animals\coordinator.py
+python animals\researcher.py
+python animals\builder.py
+python animals\auditor.py
+```
+
+## Kill switches
+
+1. **Ctrl+C** in the orchestrator PowerShell window
+2. **Create STOP.txt** in this Zoo's root folder
+3. **[future]** HALT button in the muZOOmadabo TUI (v1.2)
+
+## Files
+
+- `config.yaml` — your Zoo's identity, mission, sources, LLM models
+- `constitution.txt` — the rules (read this)
+- `zookeeper_journal.md` — your human log (write in this)
+- `llm_router.py` — shared LLM caller with fallback chain
+- `orchestrator.py` — the mission loop
+- `animals\*.py` — the 5 animal role scripts
+- `memory\` — events.jsonl + zoo_memory.md (auto-created)
+- `outbox\` — drafts produced by the Builder (auto-created)
+
+## Constitution (summary)
+
+The Zoo MAY: read allowlisted sources, generate drafts, write to its own folder.
+The Zoo MAY NOT: send email/DMs, touch money, use real credentials, escape its folder.
+The Auditor enforces the Constitution on every draft.
+The Zookeeper holds absolute veto.
+
+## TITHE
+
+This Zoo has two BTC addresses configured (see config.yaml):
+- `btc_revenue_address` — where deposits land
+- `btc_tithe_address` — where 10% of net profit flows
+
+Mechanics (auto-tithe on deposit) are implemented in v1.3. For v1.1, the
+TITHE is a constitutional principle, not yet a code path.
+
+## North star
+
+When a cryptocurrency deposit notification arrives at the revenue address
+and the Zookeeper is notified — that's when the Zoo has demonstrably worked.
+
+Until then, we keep tuning.
+
+=== FILE: config.yaml.template ===
+# Zoo Config — generated by muzooma_zai_v2.0001.py
+# Do not edit by hand unless you know what you're doing.
+# Re-run the spawner to create a new Zoo with different config.
+
+# ─── IDENTITY ───
+zoo_name: "__ZOO_NAME__"
+purpose: "__PURPOSE__"           # business | service | research | mixed
+business_model: "__BUSINESS_MODEL__"  # brokerage | lead_gen | digital_products | service_brokerage | n/a
+created_at: "__TIMESTAMP__"
+spawner_version: "muzooma_zai_v2.0001"
+
+# ─── MISSION ───
+mission: |
+  __MISSION__
+
+# ─── RESEARCH SOURCES (allowlist) ───
+sources:
+  - __SOURCES__
+
+# ─── LLM FALLBACK CHAIN ───
+# Tried in order. If model A fails, fall back to B, then C, etc.
+llm_models:
+  - __LLM_MODELS__
+llm_timeout_sec: 240
+temperature: 0.7
+max_tokens: 800
+
+# ─── ORCHESTRATION ───
+loop_interval_sec: __LOOP_INTERVAL_SEC__   # 300 = 5 min
+ollama_host: "http://localhost:11434"
+
+# ─── TITHE PRINCIPLE (mechanics in v1.3) ───
+btc_revenue_address: "__BTC_REVENUE__"     # where deposits land
+btc_tithe_address: "__BTC_TITHE__"         # where 10% of net profit flows
+tithe_percent: 10
+
+# ─── ESCALATION (v1.1 = logged only, v1.3 = email) ───
+zookeeper_email: "__ESCALATION_EMAIL__"
+
+# ─── AUTO-LAUNCH (set by spawner) ───
+auto_launch: __AUTO_LAUNCH__
+
+=== FILE: constitution.txt ===
+THE ZOO CONSTITUTION  //  v1.1  //  2026-09-23
+
+ZOO NAME: __ZOO_NAME__
+PURPOSE: __PURPOSE__
+BUSINESS MODEL: __BUSINESS_MODEL__
+
+PURPOSE
+This Zoo's specific purpose is defined in config.yaml under "mission".
+The agents pursue that purpose within the rules below.
+
+THE ZOO MAY
+- Read approved public web pages (allowlist in config.yaml under "sources")
+- Read localhost mock content
+- Generate drafts, research, code, internal reports
+- Write to its own folder only
+- Log events to the shared JSONL at zoos\_shared\events.jsonl
+
+THE ZOO MAY NOT
+- Send email, DMs, social posts, or any external message
+- Spend money, move funds, or access wallets (until v1.3 crypto rails)
+- Use real credentials of any kind (until v2.0 unique logon)
+- Modify files outside its own folder
+- Expand its own charter without Zookeeper approval
+
+AUTHORITY
+- The Zookeeper (Jason Tyler Guest) holds absolute veto
+- The Auditor may pause any task for review
+- The Zookeeper may halt the Zoo by:
+  (a) pressing Ctrl+C in the orchestrator terminal
+  (b) creating STOP.txt in the Zoo's root folder
+  (c) [future] clicking HALT in the muZOOmadabo TUI
+
+MEMORY
+- Every action is logged to memory\events.jsonl AND the shared log at
+  zoos\_shared\events.jsonl
+- The Historian maintains memory\zoo_memory.md
+- The Zookeeper's Journal (zookeeper_journal.md) is human-only and
+  not writable by agents
+
+TITHE PRINCIPLE
+- The Zookeeper provides two BTC addresses at interview time:
+  (a) Business revenue address (where deposits land)
+  (b) TITHE recipient address (a charity of the Zookeeper's choice)
+- 10% of net profit MUST flow to the TITHE address
+- Mechanics (cadence: per session / per month) implemented in v1.3
+- This is not just a rule - it is an energetic principle that the
+  Zookeeper believes helps the system be sustainable and work
+
+SUCCESS METRICS
+- PRIMARY: cryptocurrency deposit notification arrives at the
+  revenue address and the Zookeeper is notified
+- SECONDARY: networking opportunity emerges from Zoo activity
+  (somebody contacts the Zookeeper -> new business partnership)
+- OPERATIONAL: Zoo runs 24/7 without crashes, drafts produced per
+  loop, LLM fallback chain rarely needs 3rd model
+
+CONSTITUTIONAL AMENDMENTS
+May only be made by the Zookeeper, in this file, with a version bump.
+Animals may propose amendments via the Auditor, but may not apply them.
+
+LLM FALLBACK CHAIN
+- Each animal that calls an LLM uses the fallback chain pattern
+- 3-4 models per role (configured in config.yaml)
+- If model A times out or errors, fall back to B, then C
+- All fallback events are logged to events.jsonl
+- If all models fail, the orchestrator skips that step gracefully
+
+=== FILE: zookeeper_journal.md ===
+# ZOO LOG — __ZOO_NAME__
+
+This is the human journal. The agents do not write here.
+The Zoo machine log lives at memory\events.jsonl (and the shared log at
+zoos\_shared\events.jsonl).
+This file is for the Zookeeper's observations, approvals, vetoes, and reasons.
+
+---
+
+## Spawned: __TIMESTAMP__
+
+- Mission: __MISSION_SUMMARY__
+- Purpose: __PURPOSE__
+- Business model: __BUSINESS_MODEL__
+- LLM models: __LLM_MODELS_SUMMARY__
+- BTC revenue address: __BTC_REVENUE_SUMMARY__
+- TITHE BTC address: __BTC_TITHE_SUMMARY__
+
+---
+
+## Observations
+
+(Append entries here as you observe, approve, or veto. Note tuning ideas
+for future versions. Note which animals worked well, which felt weak,
+what surprised you.)
+
+- [ ] First observation:
+- [ ] What worked:
+- [ ] What didn't:
+- [ ] Tuning ideas for next version:
+
+=== FILE: llm_router.py ===
+"""
+llm_router.py — Shared LLM caller with fallback chain.
+
+Each animal in the Zoo imports this module and calls call_ollama().
+The router tries each model in config.yaml's llm_models list in order.
+On failure (timeout, error, empty response), it falls back to the next model.
+All fallback events are logged to events.jsonl so the dashboard can show
+which models had a bad day.
+"""
+import os
+import sys
+import json
+import time
+import requests
+import yaml
+from pathlib import Path
+from datetime import datetime, timezone
+
+
+def _zoo_root():
+    """Find this Zoo's root folder (parent of this file)."""
+    return Path(__file__).resolve().parent
+
+
+def load_config():
+    """Load this Zoo's config.yaml."""
+    config_path = _zoo_root() / "config.yaml"
+    if not config_path.exists():
+        raise FileNotFoundError(f"config.yaml not found at {config_path}")
+    with open(config_path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def _shared_events_log():
+    """Path to the shared events.jsonl across all Zoos."""
+    # zoos\_shared\events.jsonl
+    return _zoo_root().parent / "_shared" / "events.jsonl"
+
+
+def _zoo_events_log():
+    """Path to this Zoo's own events.jsonl."""
+    return _zoo_root() / "memory" / "events.jsonl"
+
+
+def log_event(event, details=None, animal="system"):
+    """Log an event to BOTH this Zoo's events.jsonl AND the shared log.
+    Used by the LLM router for fallback events, and importable by animals."""
+    ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    config = None
+    try:
+        config = load_config()
+    except Exception:
+        pass
+    zoo_name = config.get("zoo_name", "unknown") if config else "unknown"
+
+    record = {
+        "time": ts,
+        "zoo": zoo_name,
+        "animal": animal,
+        "event": event,
+        "details": details or {},
+    }
+
+    # Write to this Zoo's log
+    _zoo_events_log().parent.mkdir(parents=True, exist_ok=True)
+    with open(_zoo_events_log(), "a", encoding="utf-8") as f:
+        f.write(json.dumps(record) + "\n")
+
+    # Write to the shared log
+    _shared_events_log().parent.mkdir(parents=True, exist_ok=True)
+    with open(_shared_events_log(), "a", encoding="utf-8") as f:
+        f.write(json.dumps(record) + "\n")
+
+    # Echo to stdout for livestream readability
+    print(f"  [{animal}] {event}: {json.dumps(record['details'])[:100]}")
+    return record
+
+
+def call_ollama(prompt, system="", animal="unknown", max_tokens=None):
+    """Call Ollama with the fallback chain. Returns text or None.
+
+    Tries each model in config.llm_models in order. On failure, logs a
+    fallback event and tries the next model. If all fail, returns None.
+    """
+    config = load_config()
+    models = config.get("llm_models") or ["llama3.1:8b"]
+    timeout = config.get("llm_timeout_sec", 360)
+    ollama_host = config.get("ollama_host", "http://localhost:11434")
+    temperature = config.get("temperature", 0.7)
+    n_predict = max_tokens or config.get("max_tokens", 800)
+
+    full_prompt = (system + "\n\n" + prompt) if system else prompt
+
+    for i, model in enumerate(models):
+        try:
+            r = requests.post(
+                f"{ollama_host}/api/generate",
+                json={
+                    "model": model,
+                    "prompt": full_prompt,
+                    "stream": False,
+                    "options": {
+                        "temperature": temperature,
+                        "num_predict": n_predict,
+                    },
+                },
+                timeout=timeout,
+            )
+            r.raise_for_status()
+            response_text = r.json().get("response", "").strip()
+            if response_text:
+                # Log which model succeeded (only on first call per prompt —
+                # if i > 0, it means we fell back)
+                if i > 0:
+                    log_event("llm_fallback_succeeded", {
+                        "animal": animal,
+                        "failed_models": models[:i],
+                        "succeeded_model": model,
+                    }, animal=animal)
+                else:
+                    log_event("llm_call_succeeded", {
+                        "animal": animal,
+                        "model": model,
+                    }, animal=animal)
+                return response_text
+            else:
+                # Empty response — treat as failure, try next model
+                log_event("llm_empty_response", {
+                    "animal": animal,
+                    "model": model,
+                }, animal=animal)
+                continue
+        except requests.exceptions.Timeout:
+            log_event("llm_timeout", {
+                "animal": animal,
+                "model": model,
+                "timeout_sec": timeout,
+            }, animal=animal)
+            continue
+        except requests.exceptions.ConnectionError as e:
+            log_event("llm_connection_error", {
+                "animal": animal,
+                "model": model,
+                "error": str(e)[:120],
+            }, animal=animal)
+            continue
+        except Exception as e:
+            log_event("llm_error", {
+                "animal": animal,
+                "model": model,
+                "error": str(e)[:120],
+            }, animal=animal)
+            continue
+
+    # All models failed
+    log_event("llm_all_models_failed", {
+        "animal": animal,
+        "models_tried": models,
+    }, animal=animal)
+    return None
+
+
+if __name__ == "__main__":
+    # Quick test: call Ollama with the fallback chain
+    print("\n=== LLM ROUTER STANDALONE TEST ===")
+    print(f"  Zoo root: {_zoo_root()}")
+    try:
+        config = load_config()
+        print(f"  Zoo name: {config.get('zoo_name', '?')}")
+        print(f"  Models: {config.get('llm_models')}")
+    except FileNotFoundError as e:
+        print(f"  ! {e}")
+        sys.exit(1)
+
+    print("\n  Testing call_ollama() with fallback chain...")
+    response = call_ollama(
+        "Say 'hello from the Zoo' in 5 words or less.",
+        system="You are a test agent. Output only the requested phrase.",
+        animal="llm_router_test",
+    )
+    if response:
+        print(f"\n  Response: {response}")
+        print("\n  LLM ROUTER OK")
+    else:
+        print("\n  ! All models failed. Check that Ollama is running and at least one model is pulled.")
+        print("    Try: ollama list")
+        print("    Try: ollama pull llama3.1:8b")
+
+=== FILE: orchestrator.py ===
+"""
+orchestrator.py — muZOOma v1.1 Zoo orchestrator
+
+Runs the mission loop for this Zoo:
+  Coordinator loads mission
+  -> Researcher crawls sources
+  -> Builder drafts resources
+  -> Auditor reviews drafts
+  -> Historian logs completion
+  -> sleep loop_interval_sec
+  -> repeat
+
+KILL SWITCHES:
+  - Ctrl+C in this terminal
+  - Create STOP.txt in this Zoo's root folder
+  - [future] HALT button in muZOOmadabo TUI (v1.2)
+
+USAGE:
+    python orchestrator.py [--once] [--loop]
+"""
+import os
+import sys
+import time
+import signal
+import subprocess
+from pathlib import Path
+from datetime import datetime
+
+# Make this Zoo's folder importable (flat structure — all scripts in same folder)
+ZOO_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ZOO_ROOT))
+
+# Import llm_router for logging
+from llm_router import load_config, log_event
+
+ANIMALS_DIR = ZOO_ROOT  # flat structure — animals in same folder as orchestrator
+STOP_FILE = ZOO_ROOT / "STOP.txt"
+
+
+def check_kill_switch():
+    """Return True if STOP.txt exists (Zoo should halt)."""
+    return STOP_FILE.exists()
+
+
+def run_animal(animal_name):
+    """Run an animal's .py as a subprocess. Returns (success, runtime_sec)."""
+    script = ANIMALS_DIR / f"{animal_name}.py"
+    if not script.exists():
+        print(f"  ! {animal_name}.py not found at {script}")
+        return False, 0
+    t0 = time.time()
+    try:
+        proc = subprocess.run(
+            [sys.executable, str(script)],
+            cwd=str(ZOO_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=1200,  # 10-min hard cap per animal
+            encoding="utf-8",
+            errors="replace",  # Avoid UnicodeDecodeError on Windows cp1252
+        )
+        rt = time.time() - t0
+        if proc.returncode == 0:
+            print(f"  [{animal_name}] OK ({rt:.1f}s)")
+            # Print last few lines of stdout for livestream readability
+            if proc.stdout:
+                for line in proc.stdout.split("\n")[-12:]:
+                    if line.strip():
+                        print(f"    {line}")
+            return True, rt
+        else:
+            print(f"  [{animal_name}] FAIL ({rt:.1f}s)")
+            if proc.stderr:
+                print(f"    {proc.stderr[-500:]}")
+            return False, rt
+    except subprocess.TimeoutExpired:
+        print(f"  [{animal_name}] TIMEOUT")
+        return False, time.time() - t0
+    except Exception as e:
+        print(f"  [{animal_name}] EXCEPTION: {e}")
+        return False, time.time() - t0
+
+
+def run_mission_loop():
+    """Run one full mission cycle."""
+    print("\n" + "=" * 60)
+    print(f"  MISSION LOOP STARTED at {datetime.now().strftime('%H:%M:%S')}")
+    print("=" * 60)
+    log_event("orchestrator_mission_start", {
+        "timestamp": datetime.now().isoformat()
+    }, animal="orchestrator")
+
+    # Step 1: Coordinator
+    print("\n--- Step 1: COORDINATOR ---")
+    run_animal("coordinator")
+    if check_kill_switch():
+        print("\n  KILL SWITCH DETECTED — halting mission.")
+        return
+
+    # Step 2: Researcher
+    print("\n--- Step 2: RESEARCHER ---")
+    run_animal("researcher")
+    if check_kill_switch():
+        print("\n  KILL SWITCH DETECTED — halting mission.")
+        return
+
+    # Step 3: Builder
+    print("\n--- Step 3: BUILDER ---")
+    run_animal("builder")
+    if check_kill_switch():
+        print("\n  KILL SWITCH DETECTED — halting mission.")
+        return
+
+    # Step 4: Auditor
+    print("\n--- Step 4: AUDITOR ---")
+    run_animal("auditor")
+
+    # Step 5: Historian (final log)
+    print("\n--- Step 5: HISTORIAN (final log) ---")
+    log_event("orchestrator_mission_complete", {
+        "timestamp": datetime.now().isoformat()
+    }, animal="orchestrator")
+
+    print()
+    print("=" * 60)
+    print(f"  MISSION LOOP COMPLETE at {datetime.now().strftime('%H:%M:%S')}")
+    print("=" * 60)
+
+
+def main():
+    print()
+    print("=" * 60)
+    print("  muZOOma v1.1 — Zoo orchestrator")
+    print("=" * 60)
+
+    # Load config
+    try:
+        config = load_config()
+    except FileNotFoundError as e:
+        print(f"  ! {e}")
+        print(f"  ! Run muzooma_zai_v1.0001.py to spawn this Zoo first.")
+        return
+
+    zoo_name = config.get("zoo_name", "unknown")
+    loop_interval = config.get("loop_interval_sec", 300)
+
+    print(f"  Zoo: {zoo_name}")
+    print(f"  Root: {ZOO_ROOT}")
+    print(f"  Loop interval: {loop_interval} sec")
+    print(f"  Kill switch: {STOP_FILE}")
+    print(f"  LLM models: {config.get('llm_models')}")
+
+    # Check constitution exists
+    constitution = ZOO_ROOT / "constitution.txt"
+    if not constitution.exists():
+        print(f"  ! constitution.txt not found. The Zoo cannot run without its Constitution.")
+        return
+
+    # Clean Ctrl+C handler
+    def sigint_handler(sig, frame):
+        print("\n  Ctrl+C received — shutting down Zoo...")
+        log_event("orchestrator_shutdown", {"reason": "ctrl_c"}, animal="orchestrator")
+        print("  Zoo shut down cleanly. Goodbye, Zookeeper.")
+        sys.exit(0)
+    signal.signal(signal.SIGINT, sigint_handler)
+
+    # Mode
+    once_mode = "--once" in sys.argv
+    if once_mode:
+        print("  Mode: SINGLE MISSION (then exit)")
+        run_mission_loop()
+        return
+
+    # Loop mode (default)
+    print(f"  Mode: LOOP (every {loop_interval} seconds)")
+    print()
+
+    while True:
+        if check_kill_switch():
+            print(f"\n  STOP.txt detected — halting Zoo.")
+            print("  Delete STOP.txt to resume. Exiting now.")
+            break
+        run_mission_loop()
+        print(f"\n  Sleeping {loop_interval} seconds until next loop...")
+        print(f"  (Press Ctrl+C to stop.)")
+        try:
+            for _ in range(loop_interval):
+                if check_kill_switch():
+                    break
+                time.sleep(1)
+        except KeyboardInterrupt:
+            sigint_handler(None, None)
+
+
+if __name__ == "__main__":
+    main()
+
+=== FILE: historian.py ===
+r"""
+historian.py — THE HISTORIAN (turtle)
+The Zoo's memory keeper. Appends every event to memory\events.jsonl
+and maintains memory\zoo_memory.md as a running summary.
+
+Other animals call log_event() (from llm_router) to record actions.
+This script is also runnable standalone for testing.
+"""
+import os
+import sys
+import json
+from pathlib import Path
+from datetime import datetime, timezone
+
+# Make parent dir importable
+ZOO_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ZOO_ROOT))
+
+from llm_router import log_event, load_config
+
+MEMORY_DIR = ZOO_ROOT / "memory"
+ZOO_MEMORY = MEMORY_DIR / "zoo_memory.md"
+
+
+def append_summary(text):
+    """Append a human-readable line to zoo_memory.md."""
+    MEMORY_DIR.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(ZOO_MEMORY, "a", encoding="utf-8") as f:
+        f.write(f"- [{timestamp}] {text}\n")
+
+
+def read_recent_events(n=20):
+    """Return last N events from this Zoo's events.jsonl."""
+    events_log = MEMORY_DIR / "events.jsonl"
+    if not events_log.exists():
+        return []
+    with open(events_log, "r", encoding="utf-8") as f:
+        lines = f.readlines()[-n:]
+    return [json.loads(l) for l in lines if l.strip()]
+
+
+def main():
+    """Standalone test mode."""
+    print("\n=== HISTORIAN STANDALONE TEST ===")
+    try:
+        config = load_config()
+        print(f"  Zoo: {config.get('zoo_name', '?')}")
+    except FileNotFoundError as e:
+        print(f"  ! {e}")
+        return
+
+    log_event("historian_started", {"mode": "test"}, animal="historian")
+    log_event("test_event_1", {"msg": "verifying JSONL append works"}, animal="historian")
+    log_event("test_event_2", {"msg": "verifying zoo_memory.md append works"}, animal="historian")
+    append_summary("Historian standalone test completed successfully.")
+
+    print()
+    print(f"  Events log: {MEMORY_DIR / 'events.jsonl'}")
+    print(f"  Memory file: {ZOO_MEMORY}")
+    print()
+    print("  Recent events in log:")
+    for e in read_recent_events(5):
+        print(f"    {e['time']} [{e['animal']}] {e['event']}")
+    print()
+    print("  HISTORIAN OK")
+
+
+if __name__ == "__main__":
+    main()
+
+=== FILE: coordinator.py ===
+"""
+coordinator.py — THE COORDINATOR (lion)
+Reads mission from config.yaml, breaks it into sub-tasks,
+assigns to other animals.
+"""
+import os
+import sys
+from pathlib import Path
+from datetime import datetime
+
+ZOO_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ZOO_ROOT))
+
+from llm_router import load_config, log_event
+
+
+def main():
+    print("\n=== COORDINATOR ===")
+    try:
+        config = load_config()
+    except FileNotFoundError as e:
+        print(f"  ! {e}")
+        return
+
+    zoo_name = config.get("zoo_name", "?")
+    mission = config.get("mission", "(no mission)").strip()
+    purpose = config.get("purpose", "?")
+    business_model = config.get("business_model", "?")
+
+    print(f"  Zoo: {zoo_name}")
+    print(f"  Purpose: {purpose}")
+    print(f"  Business model: {business_model}")
+    print(f"  Mission: {mission[:200]}")
+    print()
+
+    log_event("coordinator_loaded_mission", {
+        "zoo": zoo_name,
+        "purpose": purpose,
+        "business_model": business_model,
+        "mission_excerpt": mission[:200],
+    }, animal="coordinator")
+
+    # Plan tasks (fixed plan for v1.1 — Coordinator doesn't dynamically
+    # choose tasks yet, just confirms the mission and orders the other animals)
+    tasks = [
+        {"step": 1, "animal": "researcher", "task": "Crawl all sources in config. Extract signals."},
+        {"step": 2, "animal": "builder", "task": "Take findings, draft helpful resources to outbox."},
+        {"step": 3, "animal": "auditor", "task": "Review each draft against constitution. Approve or pause."},
+        {"step": 4, "animal": "historian", "task": "Log mission completion. Append summary."},
+    ]
+    log_event("coordinator_planned_tasks", {"task_count": len(tasks)}, animal="coordinator")
+
+    print(f"  Planned {len(tasks)} tasks:")
+    for t in tasks:
+        print(f"    Step {t['step']}: {t['animal'].upper()} - {t['task']}")
+    print()
+    print("  COORDINATOR OK")
+
+
+if __name__ == "__main__":
+    main()
+
+=== FILE: researcher.py ===
+"""
+researcher.py - THE RESEARCHER (fox)
+Crawls allowlisted URLs from config.yaml. Uses two modes:
+  - Reddit URLs: JSON API (requests.get, no Playwright - avoids bot detection)
+  - Other URLs: Playwright (headless Chromium)
+Extracts main text and signals. Returns findings as JSON.
+"""
+import os
+import sys
+import json
+import time
+import re
+import requests
+from pathlib import Path
+from datetime import datetime
+
+ZOO_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ZOO_ROOT))
+
+from llm_router import load_config, log_event
+
+FINDINGS_FILE = ZOO_ROOT / "memory" / "research_findings.json"
+
+
+def _extract_signals(text):
+    """Find sentences indicating unmet needs / problems people are asking about.
+    Broadened keyword list to catch HN/Reddit-style problem expressions."""
+    sentences = re.split(r"[.!?]\s+", text)
+    keywords = [
+        # Direct problem language
+        "need", "problem", "want", "struggle", "wish", "looking for",
+        "trying to", "frustrated", "confused about", "difficult", "hard to",
+        # HN/Reddit-style problem patterns
+        "how do i", "how to", "is there a way", "is there a tool",
+        "someone should", "i wish there", "would be nice if", "if only",
+        "annoying", "frustrating", "broken", "doesn't work", "doesn't exist",
+        "alternative to", "no good", "can't find", "missing", "gap in",
+        "problem with", "issue with", "trouble with", "stuck on",
+        "help me", "can't figure out", "why does", "why is it",
+        # Business / market signals
+        "brokerage", "lead generation", "service", "opportunity",
+        "market", "demand for", "willing to pay", "would pay for",
+        "shut down", "discontinued", "deprecated", "no longer",
+        "expensive", "too costly", "affordable alternative",
+    ]
+    signals = []
+    for s in sentences:
+        s_clean = s.strip()
+        if len(s_clean) < 20 or len(s_clean) > 400:
+            continue
+        s_lower = s_clean.lower()
+        if any(kw in s_lower for kw in keywords):
+            signals.append(s_clean)
+        if len(signals) >= 15:
+            break
+    return signals
+
+
+def _is_reddit_url(url):
+    """Check if a URL is a Reddit URL."""
+    return "reddit.com" in url.lower()
+
+
+def crawl_reddit_json(url):
+    """Crawl Reddit using RSS feed (not blocked like JSON API).
+    Reddit blocks unauthenticated .json access but .rss feeds work."""
+    rss_url = url.rstrip("/") + ".rss"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "application/rss+xml, application/xml, text/xml, */*",
+    }
+    try:
+        r = requests.get(rss_url, headers=headers, timeout=15)
+        r.raise_for_status()
+
+        # Parse Atom XML feed
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(r.text)
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        entries = root.findall("atom:entry", ns)
+
+        text_parts = []
+        subreddit_name = url.split("/r/")[-1].rstrip("/") if "/r/" in url else "reddit"
+        title = f"Reddit r/{subreddit_name}"
+
+        for entry in entries[:25]:
+            post_title = entry.findtext("atom:title", "", ns)
+            content_elem = entry.find("atom:content", ns)
+            if content_elem is not None and content_elem.text:
+                selftext = re.sub(r'<[^>]+>', '', content_elem.text)[:500]
+            else:
+                selftext = ""
+            if post_title:
+                text_parts.append(post_title)
+            if selftext:
+                text_parts.append(selftext)
+
+        text = "\n".join(text_parts)
+        if not text:
+            log_event("researcher_reddit_empty", {"url": url}, animal="researcher")
+            return None
+
+        signals = _extract_signals(text)
+        result = {
+            "url": url,
+            "title": title,
+            "text_excerpt": text[:1000],
+            "signals": signals,
+        }
+        log_event("researcher_crawled", {
+            "url": url, "title": title, "signal_count": len(signals)
+        }, animal="researcher")
+        return result
+
+    except requests.exceptions.HTTPError as e:
+        log_event("researcher_reddit_http_error", {
+            "url": url, "status": e.response.status_code if e.response else "?",
+            "error": str(e)[:120]
+        }, animal="researcher")
+        return None
+    except Exception as e:
+        log_event("researcher_exception", {
+            "url": url, "error": str(e)[:200]
+        }, animal="researcher")
+        return None
+
+
+
+def crawl_with_playwright(url):
+    """Crawl a non-Reddit URL with Playwright headless Chromium."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        log_event("researcher_error", {"error": "playwright not installed"},
+                  animal="researcher")
+        return None
+
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            try:
+                page.goto(url, timeout=20000, wait_until="domcontentloaded")
+            except Exception as e:
+                log_event("researcher_crawl_failed", {
+                    "url": url, "error": str(e)[:100]
+                }, animal="researcher")
+                browser.close()
+                return None
+            title = page.title()
+            text = page.evaluate("() => document.body.innerText.substring(0, 3000)")
+            browser.close()
+            signals = _extract_signals(text)
+            result = {
+                "url": url,
+                "title": title,
+                "text_excerpt": text[:1000],
+                "signals": signals,
+            }
+            log_event("researcher_crawled", {
+                "url": url, "title": title, "signal_count": len(signals)
+            }, animal="researcher")
+            return result
+    except Exception as e:
+        log_event("researcher_exception", {
+            "url": url, "error": str(e)[:200]
+        }, animal="researcher")
+        return None
+
+
+def crawl_url(url):
+    """Crawl a single URL. Uses Reddit JSON API for Reddit URLs,
+    Playwright for everything else."""
+    if _is_reddit_url(url):
+        return crawl_reddit_json(url)
+    else:
+        return crawl_with_playwright(url)
+
+
+def main():
+    print("\n=== RESEARCHER ===")
+    try:
+        config = load_config()
+    except FileNotFoundError as e:
+        print(f"  ! {e}")
+        return
+
+    sources = config.get("sources") or []
+    print(f"  Found {len(sources)} sources to crawl:")
+    for s in sources:
+        mode = "JSON API" if _is_reddit_url(s) else "Playwright"
+        print(f"    - {s}  [{mode}]")
+    print()
+
+    all_findings = []
+    for url in sources:
+        print(f"  Crawling: {url}")
+        result = crawl_url(url)
+        if result:
+            all_findings.append(result)
+            print(f"    Title: {result['title']}")
+            print(f"    Signals: {len(result['signals'])}")
+        print()
+        time.sleep(10)
+
+    # Save findings
+    FINDINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(FINDINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(all_findings, f, indent=2)
+
+    total_signals = sum(len(f.get("signals", [])) for f in all_findings)
+    log_event("researcher_complete", {
+        "sources_crawled": len(all_findings),
+        "total_signals": total_signals,
+        "findings_file": str(FINDINGS_FILE)
+    }, animal="researcher")
+    print(f"  Findings saved to: {FINDINGS_FILE}")
+    print(f"  Total signals: {total_signals}")
+    print()
+    print("  RESEARCHER OK")
+
+
+if __name__ == "__main__":
+    main()
+
+=== FILE: builder.py ===
+"""
+builder.py — THE BUILDER (beaver)
+Takes the Researcher's findings and drafts helpful resources (markdown files)
+to outbox/. Uses the LLM fallback chain via llm_router.
+"""
+import os
+import sys
+import json
+import re
+from pathlib import Path
+from datetime import datetime
+
+ZOO_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ZOO_ROOT))
+
+from llm_router import load_config, log_event, call_ollama
+
+FINDINGS_FILE = ZOO_ROOT / "memory" / "research_findings.json"
+OUTBOX_DIR = ZOO_ROOT / "outbox"
+
+
+def _sanitize_filename(text, max_len=50):
+    text = re.sub(r"[^\w\s-]", "", text)[:max_len].strip().replace(" ", "_").lower()
+    return text or "untitled"
+
+
+def _extract_title_from_draft(draft):
+    for line in draft.split("\n"):
+        if line.startswith("# "):
+            return line[2:].strip()
+    return "untitled"
+
+
+def draft_resource(signal, source_url, config):
+    """Draft a helpful markdown resource for one signal."""
+    zoo_name = config.get("zoo_name", "zoo")
+    purpose = config.get("purpose", "general")
+    business_model = config.get("business_model", "n/a")
+    prompt = f"""You are the Builder animal in Zoo '{zoo_name}'.
+
+Zoo purpose: {purpose}
+Business model: {business_model}
+
+The Researcher found this signal of an unmet need:
+
+"{signal}"
+(Source: {source_url})
+
+Draft a SHORT, helpful, practical resource (max 400 words) that addresses
+this need. The resource should be:
+- Genuinely useful (not promotional)
+- Plain-spoken (no marketing-speak, no hype)
+- A markdown file with a clear title, brief intro, and 3-5 actionable steps
+- Free to give away (no payment required to use the advice)
+
+Output ONLY the markdown content. No preamble, no explanation.
+
+Title format: # Helpful Resource: [descriptive title]
+"""
+    system = ("You are a helpful, plain-spoken writer. You produce short, "
+              "practical guides. You never use marketing-speak.")
+    return call_ollama(prompt, system=system, animal="builder")
+
+
+def main():
+    print("\n=== BUILDER ===")
+    try:
+        config = load_config()
+    except FileNotFoundError as e:
+        print(f"  ! {e}")
+        return
+
+    if not FINDINGS_FILE.exists():
+        print(f"  Findings file not found: {FINDINGS_FILE}")
+        print("  Run researcher.py first.")
+        return
+
+    with open(FINDINGS_FILE, "r", encoding="utf-8") as f:
+        findings = json.load(f)
+
+    all_signals = []
+    for finding in findings:
+        for sig in finding.get("signals", []):
+            all_signals.append({"signal": sig, "source": finding["url"]})
+
+    if not all_signals:
+        print("  No signals found in research findings.")
+        return
+
+    target = all_signals[:3]
+    print(f"  Drafting {len(target)} resources from {len(all_signals)} signals...")
+    print()
+
+    OUTBOX_DIR.mkdir(parents=True, exist_ok=True)
+    drafted = []
+    for i, item in enumerate(target, 1):
+        signal = item["signal"]
+        source = item["source"]
+        print(f"  [{i}/{len(target)}] Drafting for signal: {signal[:80]}...")
+        draft = draft_resource(signal, source, config)
+        if draft and not draft.upper().startswith("SKIP"):
+            title = _extract_title_from_draft(draft)
+            safe_name = _sanitize_filename(title)
+            filename = f"need_{i:02d}_{safe_name}.md"
+            out_path = OUTBOX_DIR / filename
+            with open(out_path, "w", encoding="utf-8") as f:
+                f.write(f"<!-- Zoo draft - generated by Builder -->\n")
+                f.write(f"<!-- Source signal: {signal} -->\n")
+                f.write(f"<!-- Source URL: {source} -->\n")
+                f.write(f"<!-- Status: PENDING_AUDIT -->\n\n")
+                f.write(draft)
+                f.write("\n---\n*Powered by Jatygu.com*\n")
+            drafted.append({"file": filename, "title": title, "source": source})
+            log_event("builder_drafted", {
+                "file": filename, "title": title
+            }, animal="builder")
+            print(f"    Drafted: {filename}")
+        else:
+            log_event("builder_skipped", {
+                "reason": "LLM returned SKIP or empty"
+            }, animal="builder")
+            print(f"    Skipped (LLM declined)")
+
+    print()
+    print(f"  Drafted {len(drafted)} resources to {OUTBOX_DIR}")
+    print("  BUILDER OK")
+
+
+if __name__ == "__main__":
+    main()
+
+=== FILE: auditor.py ===
+"""
+auditor.py — THE AUDITOR (elephant)
+Reviews each draft in outbox/ against constitution.txt. Flags violations.
+Marks each draft as APPROVED or PAUSED.
+Uses the LLM fallback chain via llm_router.
+"""
+import os
+import sys
+import json
+import re
+from pathlib import Path
+from datetime import datetime
+
+ZOO_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ZOO_ROOT))
+
+from llm_router import load_config, log_event, call_ollama
+
+CONSTITUTION_FILE = ZOO_ROOT / "constitution.txt"
+OUTBOX_DIR = ZOO_ROOT / "outbox"
+
+
+def _keyword_audit(draft_path, draft_text):
+    """Fallback audit: simple banned-phrase check if LLM fails."""
+    banned = ["send email", "DM me", "click here to buy", "act now",
+              "limited time", "100% free", "guaranteed", "make money",
+              "get rich", "buy now"]
+    violations = []
+    text_lower = draft_text.lower()
+    for phrase in banned:
+        if phrase in text_lower:
+            violations.append(f"Contains banned phrase: '{phrase}'")
+    status = "APPROVED" if not violations else "PAUSED"
+    result = {
+        "file": draft_path.name,
+        "status": status,
+        "reason": "Approved by keyword fallback audit" if status == "APPROVED" else violations[0],
+        "violations": violations,
+    }
+    log_event("auditor_keyword_review", {
+        "file": draft_path.name, "status": status
+    }, animal="auditor")
+    return result
+
+
+def audit_draft(draft_path, constitution_text, config):
+    """Audit a single draft. Returns dict."""
+    draft_text = draft_path.read_text(encoding="utf-8")
+    zoo_name = config.get("zoo_name", "zoo")
+    prompt = f"""You are the Auditor animal in Zoo '{zoo_name}'.
+
+CONSTITUTION (excerpt):
+{constitution_text[:1500]}
+
+DRAFT TO AUDIT:
+{draft_text[:2000]}
+
+Audit checklist:
+1. Does the draft send any email, DM, social post, or external message? (MUST NOT)
+2. Does it spend money or move funds? (MUST NOT)
+3. Does it use real credentials? (MUST NOT)
+4. Does it make unsolicited sales offers? (SHOULD NOT — this is Service mode)
+5. Is it genuinely helpful and not promotional? (SHOULD BE)
+6. Is it plain-spoken without marketing-speak? (SHOULD BE)
+7. Are any formulas, calculations, or mathematical claims correct? Check units and logic. (MUST BE — flag any that look wrong)
+8. Are factual claims verifiable? Flag any that appear fabricated or unverified. (MUST BE — flag any suspicious)
+
+Output JSON only, no preamble:
+{{"status": "APPROVED" or "PAUSED", "reason": "one sentence", "violations": []}}
+"""
+    response = call_ollama(prompt, system="You are a strict but fair auditor. Output only JSON.",
+                          animal="auditor", max_tokens=400)
+    if not response:
+        return _keyword_audit(draft_path, draft_text)
+    try:
+        json_match = re.search(r'\{[^}]+\}', response, re.DOTALL)
+        if json_match:
+            result = json.loads(json_match.group(0))
+            result["file"] = draft_path.name
+            log_event("auditor_reviewed", {
+                "file": draft_path.name, "status": result.get("status")
+            }, animal="auditor")
+            return result
+    except json.JSONDecodeError:
+        pass
+    return _keyword_audit(draft_path, draft_text)
+
+
+def mark_draft_status(draft_path, audit_result):
+    """Update the draft's status comment."""
+    text = draft_path.read_text(encoding="utf-8")
+    new_status = f"<!-- Status: {audit_result['status']} -->"
+    if "<!-- Status:" in text:
+        text = re.sub(r'<!-- Status:.*?-->', new_status, text)
+    else:
+        text = new_status + "\n" + text
+    draft_path.write_text(text, encoding="utf-8")
+
+
+def main():
+    print("\n=== AUDITOR ===")
+    try:
+        config = load_config()
+    except FileNotFoundError as e:
+        print(f"  ! {e}")
+        return
+
+    if not CONSTITUTION_FILE.exists():
+        print(f"  ! constitution.txt not found: {CONSTITUTION_FILE}")
+        return
+    constitution = CONSTITUTION_FILE.read_text(encoding="utf-8")
+    print(f"  Constitution loaded ({len(constitution)} chars)")
+
+    drafts = sorted(OUTBOX_DIR.glob("*.md")) if OUTBOX_DIR.exists() else []
+    if not drafts:
+        print(f"  No drafts in {OUTBOX_DIR}. Run builder.py first.")
+        return
+
+    print(f"  Found {len(drafts)} drafts to audit:")
+    results = []
+    for draft_path in drafts:
+        print(f"\n  Auditing: {draft_path.name}")
+        result = audit_draft(draft_path, constitution, config)
+        results.append(result)
+        print(f"    Status: {result.get('status', 'UNKNOWN')}")
+        print(f"    Reason: {result.get('reason', '')[:100]}")
+        mark_draft_status(draft_path, result)
+
+    report_path = ZOO_ROOT / "memory" / "audit_report.json"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(report_path, "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2)
+    log_event("auditor_complete", {
+        "drafts_audited": len(results),
+        "approved": sum(1 for r in results if r.get("status") == "APPROVED")
+    }, animal="auditor")
+    print()
+    print(f"  Audit report saved to: {report_path}")
+    print("  AUDITOR OK")
+
+
+if __name__ == "__main__":
+    main()
+
+=== FILE: extract.py ===
+#!/usr/bin/env python3
+"""
+extract.py — Snipper cutter for muZOOma v1.1 master envelope (v2, flat).
+
+FLAT MODE: All files extracted to the SAME folder. Directory prefixes
+stripped — only filenames used. No subfolders.
+
+Format (simplified — no separator lines between files):
+    === FILE: path/to/file.ext ===
+    <file content>
+
+    === FILE: next_file.ext ===
+    <file content>
+
+Also backward-compatible with the old format (with === separator lines):
+    any lines of pure === characters are stripped from file content.
+
+Usage:
+    python extract.py muZOOma_v1.1_master.txt
+    python extract.py muZOOma_v1.1_master.txt --dest C:\\target\\folder
+
+Author: Z.ai for Jason Tyler Guest / Mort Parlail
+Date: 2026-09-24
+Version: 1.1.2 (flat, separator-robust)
+"""
+import sys
+import re
+from pathlib import Path
+
+MARKER = re.compile(r'^=== FILE: (.+?) ===$', re.MULTILINE)
+
+
+def extract(master_path, dest=None):
+    """Extract all files from the master envelope, FLATTENED to one folder."""
+    master = Path(master_path).resolve()
+    if not master.exists():
+        print(f"  ! Master file not found: {master}")
+        sys.exit(1)
+
+    content = master.read_text(encoding='utf-8')
+    base_dir = Path(dest).resolve() if dest else master.parent
+
+    matches = list(MARKER.finditer(content))
+    if not matches:
+        print(f"  ! No file markers found in {master}")
+        sys.exit(1)
+
+    print()
+    print("=" * 60)
+    print("  muZOOma v1.1 — Snipper Cutter (extract.py v1.1.2, FLAT)")
+    print("=" * 60)
+    print(f"  Master file: {master}")
+    print(f"  Destination: {base_dir}")
+    print(f"  Found {len(matches)} files to extract.")
+    print(f"  Mode: FLAT (all files in one folder, no subfolders)")
+    print()
+
+    extracted = 0
+    failed = 0
+
+    for i, match in enumerate(matches):
+        file_path = match.group(1).strip()
+
+        # Content starts right after the marker line's newline
+        marker_end = match.end()
+        nl_pos = content.find('\n', marker_end)
+        if nl_pos == -1:
+            print(f"  X {file_path}  (no newline after marker)")
+            failed += 1
+            continue
+        content_start = nl_pos + 1
+
+        # Content ends at the next FILE marker, or end of file
+        if i + 1 < len(matches):
+            content_end = matches[i + 1].start()
+        else:
+            content_end = len(content)
+
+        raw_content = content[content_start:content_end]
+
+        # Strip any trailing separator lines (===...) and blank lines
+        # This handles both the old format (with separators) and new format
+        raw_content = re.sub(r'\n=+\s*$', '', raw_content)  # trailing === lines
+        raw_content = raw_content.strip() + '\n'
+
+        # FLATTEN: strip directory prefix, use just filename
+        flat_name = Path(file_path).name
+        out_path = base_dir / flat_name
+
+        try:
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(raw_content, encoding='utf-8')
+            print(f"  + {flat_name}  ({len(raw_content):,} bytes)")
+            extracted += 1
+        except Exception as e:
+            print(f"  X {flat_name}  (write failed: {e})")
+            failed += 1
+
+    print()
+    print(f"  Extracted: {extracted} files")
+    if failed:
+        print(f"  Failed:    {failed} files")
+    print(f"  Location:  {base_dir}")
+    print()
+    if extracted > 0:
+        print(f"  Next steps:")
+        print(f"    1. cd {base_dir}")
+        print(f"    2. (optional) activate venv: .\\venv\\Scripts\\Activate.ps1")
+        print(f"    3. Run the spawner: python muzooma_zai_v1.0001.py")
+    print()
+    return extracted
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print()
+        print("Usage: python extract.py <master_file.txt> [--dest <path>]")
+        print()
+        print("Examples:")
+        print("  python extract.py muZOOma_v1.1_master.txt")
+        print("  python extract.py muZOOma_v1.1_master.txt --dest C:\\Users\\device\\JatyguZoo")
+        print()
+        sys.exit(1)
+
+    master = sys.argv[1]
+    dest = None
+    if '--dest' in sys.argv:
+        idx = sys.argv.index('--dest')
+        if idx + 1 < len(sys.argv):
+            dest = sys.argv[idx + 1]
+        else:
+            print("  ! --dest requires a path argument")
+            sys.exit(1)
+
+    extract(master, dest)
+
+=== END ===
